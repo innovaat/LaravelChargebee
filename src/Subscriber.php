@@ -72,15 +72,14 @@ class Subscriber
      * @return array
      * @throws MissingPlanException
      */
-    public function create($cardToken = null)
+    public function create($metadata = null)
     {
-        if (! $this->plan) throw new MissingPlanException('No plan was set to assign to the customer.');
+        if (!$this->plan) throw new MissingPlanException('No plan was set to assign to the customer.');
 
-        $subscription = $this->buildSubscription($cardToken);
+        $subscription = $this->buildSubscription($metadata);
 
         $result = ChargeBee_Subscription::create($subscription);
         $subscription = $result->subscription();
-        $card = $result->card();
         $addons = $subscription->addons;
 
         $subscription = $this->model->subscriptions()->create([
@@ -89,7 +88,6 @@ class Subscriber
             'next_billing_at'   => $subscription->currentTermEnd,
             'trial_ends_at'     => $subscription->trialEnd,
             'quantity'          => $subscription->planQuantity,
-            'last_four'         => ($card) ? $card->last4 : null,
         ]);
 
         if ($addons) {
@@ -154,7 +152,6 @@ class Subscriber
             'next_billing_at'   => $subscription->currentTermEnd,
             'trial_ends_at'     => $subscription->trialEnd,
             'quantity'          => $subscription->planQuantity,
-            'last_four'         => $card->last4,
         ]);
 
         if ($addons) {
@@ -277,7 +274,7 @@ class Subscriber
      * @param null $cardToken
      * @return array
      */
-    public function buildSubscription($cardToken = null)
+    public function buildSubscription($fields = null)
     {
         $subscription = [];
         $subscription['planId'] = $this->plan;
@@ -290,10 +287,10 @@ class Subscriber
         $subscription['addons'] = $this->buildAddOns();
         $subscription['coupon'] = $this->coupon;
 
-        if ($cardToken)
-        {
-            $subscription['card']['gateway'] = getenv('CHARGEBEE_GATEWAY');
-            $subscription['card']['tmpToken'] = $cardToken;
+        if(is_array($fields)) {
+            foreach ($fields as $key => $value) {
+                $subscription[$key] = array_merge($subscription[$key], $value);
+            }
         }
 
         return $subscription;
