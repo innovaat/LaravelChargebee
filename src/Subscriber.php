@@ -284,6 +284,7 @@ class Subscriber
         $subscription['customer'] = [
             'firstName' => $this->model->first_name,
             'lastName'  => $this->model->last_name,
+            'company'  => $this->model->company,
             'email'     => $this->model->email
         ];
         $subscription['addons'] = $this->buildAddOns();
